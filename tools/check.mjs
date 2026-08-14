@@ -42,6 +42,18 @@ const PALETTE_TOKENS = ['--bg', '--surface', '--text', '--muted', '--rule', '--t
 // navigation.
 const HEADING_CLASSES = ['q'];
 
+// Text-level elements that must not have `color` set on a bare element selector.
+// A direct element match beats an inherited value at any specificity, so
+// `p { color: var(--text) }` silently defeats the --muted colour set on `footer`
+// for every paragraph inside it -- which is exactly what shipped.  Containers
+// (body, header, footer) are absent from this list on purpose: setting a colour
+// there is how inheritance is meant to be driven.
+const NO_BARE_COLOR = new Set([
+  'p', 'li', 'ul', 'ol', 'dl', 'dt', 'dd',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'span', 'strong', 'em', 'b', 'i', 'small', 'code', 'kbd', 'td', 'th',
+]);
+
 // [foreground, background, minimum ratio, why]
 const CONTRAST_PAIRS = [
   ['--text', '--bg', 4.5, 'body copy'],
@@ -186,6 +198,25 @@ for (const [key, entries] of byKey) {
     fail('drift',
       `"${selector}"${where} is defined only in ${entries[0].page}. ` +
       `A single-page rule must be listed in PAGE_SPECIFIC in this script.`);
+  }
+}
+
+// A bare element selector setting `color` beats inheritance, so it survives
+// being applied to every file identically and the drift check above would not
+// see it.  Checked separately.
+for (const page of present) {
+  for (const rule of files[page].css) {
+    if (rule.context.includes('print')) continue; // print resets the palette wholesale
+    const parts = rule.selector.split(',').map(s => s.trim());
+    for (const part of parts) {
+      if (!NO_BARE_COLOR.has(part)) continue;
+      if (/(^|;\s*)color\s*:/.test(rule.declarations)) {
+        fail('inheritance',
+          `${page}: "${part}" sets color directly. A direct element match beats an ` +
+          `inherited value, so this overrides the colour set on any ancestor ` +
+          `(this is how the footer lost its --muted colour). Style a container or a class instead.`);
+      }
+    }
   }
 }
 
