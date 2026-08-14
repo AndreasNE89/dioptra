@@ -63,6 +63,11 @@
   .contact p { margin: 0; }
   .contact a { font-weight: 600; }
   .q { font-size: 1rem; font-weight: 600; margin: 1.6rem 0 .3rem; }
+  code {
+    font: .9em/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 5px; padding: .1em .35em;
+  }
   kbd {
     font: .85em/1 ui-monospace, SFMono-Regular, Menlo, monospace;
     background: var(--surface); border: 1px solid var(--rule);
@@ -165,6 +170,23 @@ provides a real file, works normally. This is a known gap.</p>
   <li><kbd>⌘Z</kbd> — undo the last file operation, including moves and deletes</li>
   <li><kbd>↩</kbd> — rename; with more than one file selected, opens batch rename</li>
 </ul>
+
+<h2>Refunds and removal</h2>
+
+<h3 class="q">Can I have a refund?</h3>
+<p>Refunds are Apple's to give rather than ours. Every App Store purchase goes
+through Apple, so we never see your payment details and have no way to look up
+what you bought. Ask at
+<a href="https://reportaproblem.apple.com" rel="noreferrer">reportaproblem.apple.com</a>.</p>
+
+<h3 class="q">How do I remove Dioptra completely?</h3>
+<p>Drag the app to the Trash. That removes the app but not the container macOS
+keeps for it: deleting a sandboxed app leaves its container behind. It sits in
+<code>~/Library/Containers</code>, in the folder carrying Dioptra's bundle
+identifier, and deleting that folder removes everything the app ever stored —
+including the security-scoped bookmarks recording which folders you granted
+access to. That is the whole of it. There is no copy anywhere else, because
+nothing was ever sent anywhere else.</p>
 
 <h2>Privacy</h2>
 <p>Dioptra collects nothing and has no network access at all. The full policy is

@@ -11,6 +11,10 @@ policy URL is required.
 
 `404.html` catches anything else and points back at those two.
 
+Still missing from the support page: a minimum macOS version, the current app
+version, and a link to the App Store listing. Those three facts live with the
+app rather than here, which is why they are not on the page yet.
+
 ## Why this repository exists separately
 
 The app's source lives in a private repository. GitHub Pages will not serve a

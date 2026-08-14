@@ -28,7 +28,7 @@ const CONTENT_PAGES = ['index.html', 'support.html'];
 const PAGE_SPECIFIC = new Set([
   '.lede', '.lede p',                       // index + 404
   '.contact', '.contact p', '.contact a',   // support
-  '.q', 'kbd',                              // support
+  '.q', 'kbd', 'code',                      // support
   '.none',                                  // index
   'h2', 'h2:first-of-type', 'strong',       // pages that have prose sections
 ]);
@@ -390,13 +390,17 @@ for (const page of present) {
   for (const u of urls) fail('external', `${page} CSS references url(${u})`);
   void css;
 
-  // Any remaining absolute URL must be canonical, og:url, or the SVG namespace.
+  // Any remaining absolute URL must be canonical, og:url, an <a> target, or the
+  // SVG namespace.  An <a> is navigation the reader has to choose, not a fetch
+  // the page performs, so it does not contradict the no-network claim; the
+  // referrer it would leak is handled by the rel check further down.
   for (const m of html.matchAll(/(https?:)?\/\/[^\s"'<>)]+/gi)) {
     const url = m[0];
     if (url.startsWith('http://www.w3.org/2000/svg')) continue;
     const around = html.slice(Math.max(0, m.index - 120), m.index);
     if (/<link[^>]*rel=["']canonical["'][^>]*$/i.test(around)) continue;
     if (/<meta[^>]*(og:url|og:site_name)[^>]*$/i.test(around)) continue;
+    if (/<a[^>]*$/i.test(around)) continue;
     fail('external', `${page} references ${url.slice(0, 60)} outside canonical/og:url`);
   }
 }
@@ -468,7 +472,18 @@ const SITE_BASE = '/dioptra/';
 for (const page of present) {
   for (const tag of files[page].html.match(/<a\b[^>]*>/gi) || []) {
     const href = attr(tag, 'href');
-    if (!href || href.startsWith('mailto:') || href.startsWith('#') || /^(https?:)?\/\//i.test(href)) continue;
+    if (!href || href.startsWith('mailto:') || href.startsWith('#')) continue;
+
+    // Linking off-site is allowed -- it is navigation, not a fetch -- but a
+    // page whose whole claim is that it tells nobody anything about you should
+    // not tell the destination which page the reader arrived from.
+    if (/^(https?:)?\/\//i.test(href)) {
+      const rel = (attr(tag, 'rel') || '').toLowerCase().split(/\s+/);
+      if (!rel.includes('noreferrer')) {
+        fail('links', `${page} links to ${href} without rel="noreferrer"`);
+      }
+      continue;
+    }
 
     let target = href;
     if (target.startsWith(SITE_BASE)) target = target.slice(SITE_BASE.length);
