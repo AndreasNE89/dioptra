@@ -29,9 +29,16 @@ manners and partly consistency: a page whose entire claim is "this app collects
 nothing about you" has no business loading a third-party tracker to say so.
 
 The favicon is an inline `data:` URI of the app mark, so even the icon costs no
-request. The consequence of being self-contained is that the shared shell — the
-palette, the layout, the mark — is copied into each file rather than linked. When
-one changes, change all three; they have drifted apart before.
+request. Each page also carries a `Content-Security-Policy` of
+`default-src 'none'`, which makes the browser enforce that rather than take the
+page's word for it: `img-src data:` permits the inline favicon and nothing else,
+and `style-src 'unsafe-inline'` permits the inline `<style>` without permitting a
+remote one. `frame-ancestors` and `report-uri` are absent because a `meta` tag
+cannot carry them and GitHub Pages cannot set real headers.
+
+The consequence of being self-contained is that the shared shell — the palette,
+the layout, the mark — is copied into each file rather than linked. When one
+changes, change all three; they have drifted apart before.
 
     node tools/check.mjs
 

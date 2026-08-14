@@ -54,6 +54,13 @@ const NO_BARE_COLOR = new Set([
   'span', 'strong', 'em', 'b', 'i', 'small', 'code', 'kbd', 'td', 'th',
 ]);
 
+// Bare selectors from the list above that are nonetheless allowed to set a
+// colour, because it is a deliberate typographic choice rather than an accident
+// of specificity.  Adding an entry here is the point: it has to be argued for.
+//   h2 -- section labels are muted on purpose, and no h2 sits inside a
+//         colour-scoped container where the override would surprise anyone.
+const COLOR_INTENT = new Set(['h2']);
+
 // [foreground, background, minimum ratio, why]
 const CONTRAST_PAIRS = [
   ['--text', '--bg', 4.5, 'body copy'],
@@ -209,7 +216,7 @@ for (const page of present) {
     if (rule.context.includes('print')) continue; // print resets the palette wholesale
     const parts = rule.selector.split(',').map(s => s.trim());
     for (const part of parts) {
-      if (!NO_BARE_COLOR.has(part)) continue;
+      if (!NO_BARE_COLOR.has(part) || COLOR_INTENT.has(part)) continue;
       if (/(^|;\s*)color\s*:/.test(rule.declarations)) {
         fail('inheritance',
           `${page}: "${part}" sets color directly. A direct element match beats an ` +
@@ -333,6 +340,29 @@ for (const page of present) {
 }
 
 // --- the "loads nothing" claim ------------------------------------------------
+
+// The pages assert in their own footer that they fetch nothing from anywhere.
+// This policy makes the browser enforce it rather than take the page's word:
+// default-src 'none' blocks every fetch, img-src data: permits only the inline
+// favicon, and style-src 'unsafe-inline' permits the inline <style> without
+// permitting a remote one.  frame-ancestors and report-uri are ignored in a
+// meta tag, and GitHub Pages cannot set real headers, so they are absent by
+// necessity rather than by choice.
+const EXPECTED_CSP =
+  "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'";
+
+for (const page of present) {
+  const tag = tagsNamed(files[page].html, 'meta')
+    .find(t => (attr(t, 'http-equiv') || '').toLowerCase() === 'content-security-policy');
+  if (!tag) {
+    fail('csp', `${page} has no Content-Security-Policy meta tag`);
+  } else {
+    const policy = (attr(tag, 'content') || '').replace(/\s+/g, ' ').trim();
+    if (policy !== EXPECTED_CSP) {
+      fail('csp', `${page} policy is "${policy}", expected "${EXPECTED_CSP}"`);
+    }
+  }
+}
 
 for (const page of present) {
   const { html, css } = files[page];
