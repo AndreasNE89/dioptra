@@ -33,6 +33,15 @@ request. The consequence of being self-contained is that the shared shell — th
 palette, the layout, the mark — is copied into each file rather than linked. When
 one changes, change all three; they have drifted apart before.
 
+    node tools/check.mjs
+
+catches that drift, along with broken internal links, palette contrast below the
+WCAG floor, missing landmarks or heading levels, and anything that would make a
+page fetch from the network. It has no dependencies — no `package.json`, no
+install step — and runs on every push via `.github/workflows/check.yml`. It reads
+text rather than rendering, so it cannot see real computed styles or layout; the
+header comment in the script says what it does and does not prove.
+
 They follow the reader's light or dark system setting, lay out on a phone, and
 print legibly: a `@media print` block forces the light palette, so saving the
 privacy policy as a PDF from a dark-mode browser does not produce pale grey text

@@ -1,0 +1,14 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Node is preinstalled on the runner and the checker has no dependencies,
+      # so there is nothing to install.
+      - run: node tools/check.mjs
