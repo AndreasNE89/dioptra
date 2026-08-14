@@ -9,12 +9,14 @@ Pages:
 Both are linked from the app's App Store product page, where a reachable privacy
 policy URL is required.
 
+`404.html` catches anything else and points back at those two.
+
 ## Why this repository exists separately
 
 The app's source lives in a private repository. GitHub Pages will not serve a
 private repository on a free plan, and making the source public in order to host
 one page would have been a wildly disproportionate trade. This repository holds
-the two pages and nothing else.
+those pages and nothing else.
 
 The privacy policy's canonical text is kept alongside the code as `docs/PRIVACY.md`;
 `index.html` here is its published form. If one changes, change both.
@@ -26,4 +28,12 @@ images, no analytics — nothing is fetched from anywhere. That is partly good
 manners and partly consistency: a page whose entire claim is "this app collects
 nothing about you" has no business loading a third-party tracker to say so.
 
-They follow the reader's light or dark system setting and lay out on a phone.
+The favicon is an inline `data:` URI of the app mark, so even the icon costs no
+request. The consequence of being self-contained is that the shared shell — the
+palette, the layout, the mark — is copied into each file rather than linked. When
+one changes, change all three; they have drifted apart before.
+
+They follow the reader's light or dark system setting, lay out on a phone, and
+print legibly: a `@media print` block forces the light palette, so saving the
+privacy policy as a PDF from a dark-mode browser does not produce pale grey text
+on white paper.
