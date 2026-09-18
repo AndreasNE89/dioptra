@@ -9,11 +9,13 @@
   :root {
     --bg: #ffffff; --surface: #f6f8f9; --text: #12242a; --muted: #5b6f77;
     --rule: #dfe6e9; --teal: #0A6B7C; --amber: #C98C22;
+    --amber-text: #9A6A12;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0d1719; --surface: #142226; --text: #e6edef; --muted: #9bb0b7;
       --rule: #24373c; --teal: #4fb3c7; --amber: #E8A93C;
+      --amber-text: #E8A93C;
     }
   }
   * { box-sizing: border-box; }
@@ -45,7 +47,7 @@
   }
   .contact p { margin: 0; }
   .contact a { font-weight: 600; }
-  .q { font-weight: 600; margin: 1.6rem 0 .3rem; }
+  .q { font-size: 1rem; font-weight: 600; margin: 1.6rem 0 .3rem; }
   kbd {
     font: .85em/1 ui-monospace, SFMono-Regular, Menlo, monospace;
     background: var(--surface); border: 1px solid var(--rule);
@@ -95,7 +97,7 @@
 
 <h2>Questions that come up first</h2>
 
-<p class="q">Dioptra is empty when I open it. Is it broken?</p>
+<h3 class="q">Dioptra is empty when I open it. Is it broken?</h3>
 <p>No — that is by design. Dioptra is sandboxed and begins with access to
 nothing at all. On first launch it shows a welcome screen with a single button
 that opens the standard macOS folder picker. Whatever folder you choose becomes
@@ -104,29 +106,31 @@ launch. You can add more folders at any time, and remove them just as easily.</p
 <p>This is deliberate. A file manager that quietly helped itself to your whole
 home directory would be easier to write and much harder to trust.</p>
 
-<p class="q">Why can't it open some folder I picked a while ago?</p>
+<h3 class="q">Why can't it open some folder I picked a while ago?</h3>
 <p>If the folder was moved, renamed, or lived on a disk that is no longer
 connected, the saved permission no longer points anywhere. Add the folder again
 from the sidebar and it will work.</p>
 
-<p class="q">Folder sizes show “—” instead of a number.</p>
+<h3 class="q">Folder sizes show “—” instead of a number.</h3>
 <p>Measuring a folder means walking everything inside it, so Dioptra budgets that
 work rather than freezing while it counts an enormous tree. When a folder exceeds
 the budget it shows “—” instead of guessing. You can always measure one
 explicitly from its context menu, or open <strong>Space</strong> view, which maps
 the whole folder as rectangles sized by what they actually use.</p>
 
-<p class="q">The folder tree shows “… and N more”.</p>
+<h3 class="q">The folder tree shows “… and N more”.</h3>
 <p>The navigation tree draws at most 400 items per folder so it stays responsive.
 When there are more, it says so rather than silently hiding them, and clicking
 that row opens the folder in the main list, which has no limit.</p>
 
-<p class="q">Dragging from Photos or Mail does nothing.</p>
-<p>Those apps hand over a promise of a file rather than a file, and Dioptra does
-not accept promised files yet. Dragging from Finder, or from any app that
-provides a real file, works normally. This is a known gap.</p>
+<h3 class="q">Dragging from Photos or Mail does nothing.</h3>
+<p>Those apps hand over a promise of a file rather than a file. Dioptra accepts
+promised files since version 1.1: the drop lands in the folder you are browsing,
+with a progress ticket and undo like any other operation. If it still does
+nothing, you are on 1.0 &mdash; update from the App Store. Dragging from Finder,
+or from any app that provides a real file, works in every version.</p>
 
-<p class="q">Some shortcuts worth knowing</p>
+<h3 class="q">Some shortcuts worth knowing</h3>
 <ul>
   <li><kbd>⌘⇧P</kbd> — jump to any folder by typing part of its name</li>
   <li><kbd>⌘⇧\</kbd> — split the tab into two panes</li>
