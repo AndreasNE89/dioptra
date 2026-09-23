@@ -55,6 +55,12 @@ const CASES = [
     ] },
   { name: 'fragment naming an id that does not exist', pass: false, expect: 'has no id="no-such-id"',
     edits: [['index.html', '\n</main>', '\n<p><a href="support.html#no-such-id">there</a></p>\n</main>']] },
+
+  // The container path once shipped as one unbreakable <code> run and pushed
+  // the support page wider than every phone up to 390 px.
+  { name: 'container path without <wbr> break points', pass: false, expect: 'no break point',
+    edits: [['support.html', '<code>~/Library/<wbr>Containers/<wbr>App.andreas.Filefy</code>',
+             '<code>~/Library/Containers/App.andreas.Filefy</code>']] },
 ];
 
 let failed = 0;

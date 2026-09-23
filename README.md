@@ -75,6 +75,9 @@ dependencies — no `package.json`, no install step — and runs on every push v
 which breaks copies of the pages on purpose and expects the checker to notice.
 It reads text rather than rendering, so it cannot see real computed styles or
 layout; the header comment in the script says what it does and does not prove.
+The one layout fault it does catch is a `<code>` or `<kbd>` run too long to wrap
+on a 320 px phone (a path such as `~/Library/Containers/…` needs `<wbr>` after
+its slashes); anything else about phone width needs a look in a browser.
 
 **The check does not block publishing.** GitHub Pages deploys whatever is on
 `main` whether the workflow passes or fails, so run both commands before

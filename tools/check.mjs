@@ -566,6 +566,31 @@ for (const page of present) {
   }
 }
 
+// --- phone width --------------------------------------------------------------
+
+// Nothing here renders, but one way a page gets wider than a phone shows up in
+// the text: a monospace run the browser will not wrap.  Browsers do not break a
+// path such as ~/Library/Containers/App.andreas.Filefy at its slashes or dots,
+// so that one <code> (39 characters) made the whole support page scroll sideways
+// on every phone up to 390 px.  At a 320 px viewport the column is 280 px (the
+// 1.25rem gutters), and the monospace face at .9em of 17 px is about 9.2 px a
+// character, less the code box's padding: about 29 characters fit.  Offer break
+// points with <wbr>, which copy and paste leave out.  A whitespace or <wbr>
+// ends a run; hyphens are not counted as break points, to stay on the safe side.
+const MAX_MONO_RUN = 28;
+for (const page of present) {
+  for (const m of files[page].html.matchAll(/<(code|kbd)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+    for (const run of m[2].split(/<wbr\s*\/?>|\s+/i)) {
+      const text = run.replace(/<[^>]*>/g, '').replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, 'x');
+      if (text.length > MAX_MONO_RUN) {
+        fail('layout',
+          `${page}: <${m[1]}> run "${text}" is ${text.length} characters with no break point ` +
+          `(at most ${MAX_MONO_RUN} fit a 320 px phone); add <wbr> after its slashes`);
+      }
+    }
+  }
+}
+
 // ---------------------------------------------------------------- report ----
 
 if (!failures.length) {
