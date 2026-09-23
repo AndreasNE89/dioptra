@@ -1,5 +1,8 @@
 name: check
 
+# Reports only. GitHub Pages deploys main whether or not this passes, so a red
+# run here does not stop a broken page from going live: run it before merging.
+
 on:
   push:
   pull_request:
@@ -12,3 +15,5 @@ jobs:
       # Node is preinstalled on the runner and the checker has no dependencies,
       # so there is nothing to install.
       - run: node tools/check.mjs
+      # Breaks copies of the pages on purpose and expects the checker to notice.
+      - run: node tools/check-selftest.mjs

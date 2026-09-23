@@ -13,24 +13,36 @@
 // prints, or whether anything overflows.  The palette check below asserts that the
 // declared colours are sound -- not that they are the ones that meet on screen.
 // Do not read a pass here as "the pages render correctly".
+//
+// NOR DOES IT GATE PUBLISHING.  GitHub Pages deploys whatever is on `main`
+// whether or not this passes; the workflow only reports.  Run it before merging.
+//
+// Usage: node tools/check.mjs [dir]   (dir defaults to the repository root;
+// tools/check-selftest.mjs uses it to run this script against broken copies.)
 
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = process.argv[2]
+  ? resolve(process.argv[2])
+  : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGES = ['index.html', 'support.html', '404.html'];
 const CONTENT_PAGES = ['index.html', 'support.html'];
 
-// Selectors permitted to exist in only one file.  A rule that lives on a single
-// page has to be named here, which is the gate `p, li { color: var(--text) }`
-// would have had to pass.
-const PAGE_SPECIFIC = new Set([
-  '.lede', '.lede p',                       // index + 404
-  '.contact', '.contact p', '.contact a',   // support
-  '.q', 'kbd', 'code',                      // support
-  '.none',                                  // index
-  'h2', 'h2:first-of-type', 'strong',       // pages that have prose sections
+// Every rule not named here is shell: it must be on EVERY page, with the same
+// declarations.  A rule that belongs to only some pages is named here together
+// with exactly the pages it belongs on, which is the gate
+// `p, li { color: var(--text) }` would have had to pass.  Both directions fail:
+// a rule missing from a page it is listed for, and a rule on a page it is not.
+// (A shared rule such as `footer a` deleted from one page used to pass, because
+// only rules present on a single page were ever questioned.)
+const PAGE_SPECIFIC = new Map([
+  ...['.lede', '.lede p'].map(s => [s, ['index.html', '404.html']]),
+  ...['.contact', '.contact p', '.contact a', '.q', 'kbd', 'code'].map(s => [s, ['support.html']]),
+  ['.none', ['index.html']],
+  // The pages with prose sections; 404.html has none.
+  ...['h2', 'h2:first-of-type', 'strong'].map(s => [s, ['index.html', 'support.html']]),
 ]);
 
 const PALETTE_TOKENS = ['--bg', '--surface', '--text', '--muted', '--rule', '--teal', '--amber', '--amber-ink'];
@@ -156,7 +168,11 @@ function parseDeclarations(body) {
 
 // ------------------------------------------------------------------ html ----
 
-const styleOf = html => (html.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
+// Every <style> block, not just the first: a second block appended to one page
+// is exactly how a stray `p { color }` would come back without the drift and
+// inheritance checks seeing it.
+const styleBlocks = html => [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(m => m[1]);
+const styleOf = html => styleBlocks(html).join('\n');
 const headOf = html => (html.match(/<head>([\s\S]*?)<\/head>/) || [, ''])[1];
 
 function attr(tag, name) {
@@ -180,6 +196,17 @@ const present = Object.keys(files);
 
 // --- shell drift -------------------------------------------------------------
 
+for (const page of present) {
+  const blocks = styleBlocks(files[page].html).length;
+  if (blocks !== 1) {
+    fail('drift', `${page} has ${blocks} <style> blocks, expected exactly 1 (the shell lives in one block per page)`);
+  }
+  // A style attribute is CSS that none of the checks below can see.
+  for (const m of files[page].html.matchAll(/<([a-z0-9]+)\b[^>]*\sstyle\s*=/gi)) {
+    fail('drift', `${page} has a style attribute on <${m[1].toLowerCase()}>; put the rule in the <style> block`);
+  }
+}
+
 const byKey = new Map(); // "context|selector" -> [{ page, declarations }]
 for (const page of present) {
   for (const rule of files[page].css) {
@@ -188,6 +215,8 @@ for (const page of present) {
     byKey.get(key).push({ page, declarations: rule.declarations });
   }
 }
+
+const listPages = pages => pages.length ? pages.join(', ') : 'no page';
 
 for (const [key, entries] of byKey) {
   const [context, selector] = key.split('|');
@@ -201,10 +230,34 @@ for (const [key, entries] of byKey) {
         `"${selector}"${where} differs between files:\n` +
         entries.map(e => `        ${e.page.padEnd(14)} ${e.declarations}`).join('\n'));
     }
-  } else if (!PAGE_SPECIFIC.has(selector)) {
+  }
+
+  const on = new Set(entries.map(e => e.page));
+  const expected = PAGE_SPECIFIC.has(selector)
+    ? PAGE_SPECIFIC.get(selector).filter(p => present.includes(p))
+    : present;
+  const missing = expected.filter(p => !on.has(p));
+  const extra = [...on].filter(p => !expected.includes(p));
+  if (missing.length) {
     fail('drift',
-      `"${selector}"${where} is defined only in ${entries[0].page}. ` +
-      `A single-page rule must be listed in PAGE_SPECIFIC in this script.`);
+      `"${selector}"${where} is on ${listPages([...on])} but missing from ${missing.join(', ')}. ` +
+      (PAGE_SPECIFIC.has(selector)
+        ? `PAGE_SPECIFIC in this script lists it for ${listPages(expected)}.`
+        : `A shared rule must be on every page; one meant for some pages only must be listed in PAGE_SPECIFIC in this script.`));
+  }
+  if (extra.length) {
+    fail('drift',
+      `"${selector}"${where} is on ${extra.join(', ')}, which PAGE_SPECIFIC in this script does not list for it ` +
+      `(listed: ${listPages(expected)}).`);
+  }
+}
+
+// A page-specific rule deleted from every page it was listed for leaves no
+// entry above to compare, so check the list itself too.
+for (const [selector, pages] of PAGE_SPECIFIC) {
+  const found = [...byKey.keys()].some(k => k.split('|')[1] === selector);
+  if (!found && pages.some(p => present.includes(p))) {
+    fail('drift', `"${selector}" is listed in PAGE_SPECIFIC for ${pages.join(', ')} but is on no page`);
   }
 }
 
@@ -469,10 +522,24 @@ for (const icon of icons) {
 // links would resolve against the wrong directory.
 const SITE_BASE = '/dioptra/';
 
+const idsOf = html => new Set([...html.matchAll(/\sid\s*=\s*["']([^"']+)["']/gi)].map(m => m[1]));
+
+// A fragment must name an id on the page it points at: a mistyped anchor
+// lands the reader at the top of the page with no sign anything went wrong.
+function checkFragment(page, href, targetPage, fragment) {
+  if (!fragment) return;
+  let id;
+  try { id = decodeURIComponent(fragment); } catch { id = fragment; }
+  const html = files[targetPage]?.html
+    ?? (existsSync(join(ROOT, targetPage)) ? readFileSync(join(ROOT, targetPage), 'utf8') : '');
+  if (!idsOf(html).has(id)) fail('links', `${page} links ${href}, but ${targetPage} has no id="${id}"`);
+}
+
 for (const page of present) {
   for (const tag of files[page].html.match(/<a\b[^>]*>/gi) || []) {
     const href = attr(tag, 'href');
-    if (!href || href.startsWith('mailto:') || href.startsWith('#')) continue;
+    if (!href || href.startsWith('mailto:')) continue;
+    if (href.startsWith('#')) { checkFragment(page, href, page, href.slice(1)); continue; }
 
     // Linking off-site is allowed -- it is navigation, not a fetch -- but a
     // page whose whole claim is that it tells nobody anything about you should
@@ -485,12 +552,17 @@ for (const page of present) {
       continue;
     }
 
-    let target = href;
+    // The fragment and query are not part of the file name.
+    const hash = href.indexOf('#');
+    const fragment = hash === -1 ? '' : href.slice(hash + 1);
+    let target = href.slice(0, hash === -1 ? undefined : hash).split('?')[0];
+    if (target === '') { checkFragment(page, href, page, fragment); continue; } // "?q" or "?q#id": this page
     if (target.startsWith(SITE_BASE)) target = target.slice(SITE_BASE.length);
     else if (target.startsWith('/')) { fail('links', `${page} links ${href}, which is outside ${SITE_BASE}`); continue; }
     if (target === '' || target.endsWith('/')) target += 'index.html';
 
-    if (!existsSync(join(ROOT, target))) fail('links', `${page} links ${href}, but ${target} does not exist`);
+    if (!existsSync(join(ROOT, target))) { fail('links', `${page} links ${href}, but ${target} does not exist`); continue; }
+    checkFragment(page, href, target, fragment);
   }
 }
 

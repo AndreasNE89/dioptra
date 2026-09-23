@@ -46,12 +46,21 @@ changes, change all three; they have drifted apart before.
 
     node tools/check.mjs
 
-catches that drift, along with broken internal links, palette contrast below the
-WCAG floor, missing landmarks or heading levels, and anything that would make a
-page fetch from the network. It has no dependencies — no `package.json`, no
-install step — and runs on every push via `.github/workflows/check.yml`. It reads
-text rather than rendering, so it cannot see real computed styles or layout; the
-header comment in the script says what it does and does not prove.
+catches that drift, along with broken internal links (including `#fragment`
+links whose id does not exist), palette contrast below the WCAG floor, missing
+landmarks or heading levels, and anything that would make a page fetch from the
+network. Every CSS rule must be on all three pages unless `PAGE_SPECIFIC` in the
+script names the pages it belongs on, so a shared rule deleted from one page
+fails, and so does a second `<style>` block or a `style` attribute. It has no
+dependencies — no `package.json`, no install step — and runs on every push via
+`.github/workflows/check.yml`, together with `node tools/check-selftest.mjs`,
+which breaks copies of the pages on purpose and expects the checker to notice.
+It reads text rather than rendering, so it cannot see real computed styles or
+layout; the header comment in the script says what it does and does not prove.
+
+**The check does not block publishing.** GitHub Pages deploys whatever is on
+`main` whether the workflow passes or fails, so run both commands before
+merging.
 
 They follow the reader's light or dark system setting, lay out on a phone, and
 print legibly: a `@media print` block forces the light palette, so saving the
