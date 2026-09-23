@@ -11,9 +11,26 @@ policy URL is required.
 
 `404.html` catches anything else and points back at those two.
 
-Still missing from the support page: a minimum macOS version, the current app
-version, and a link to the App Store listing. Those three facts live with the
-app rather than here, which is why they are not on the page yet.
+**The privacy policy stays at `/`.** The App Store record points there, Help ▸
+Privacy Policy in 1.1 and later opens it, and the policy promises that changes
+will be posted "at this same address". If `/` ever becomes a product page, the
+full policy text stays on it for as long as any build that opens `/` is in use.
+
+The support page now carries the requirements (macOS 26 or later; Apple
+Intelligence for Organize) and links the App Store listing by its app id,
+`id6796373724`, which does not change. Still missing, on purpose: the current
+app version. It would go stale with every release; the page points at About
+Dioptra and the App Store's version history instead. Also missing: an App Store
+badge, which would have to be Apple's artwork; the pages use a text link.
+
+Two parts of the support page are tied to releases and need revisiting:
+
+- **Known issues in versions 1.0 and 1.1** comes out once 1.2 is on the App
+  Store with those fixes in it. Check the 1.2 release notes against each bullet
+  first; if one is not fixed, keep that bullet and change the heading.
+- **The Photos and Mail answer** describes 1.0 and 1.1 separately because
+  nothing in the app's docs records whether 1.1 passed review. Once that is
+  known and 1.0 is no longer in use, the 1.0 half can go.
 
 ## Why this repository exists separately
 
@@ -23,7 +40,8 @@ one page would have been a wildly disproportionate trade. This repository holds
 those pages and nothing else.
 
 The privacy policy's canonical text is kept alongside the code as `docs/PRIVACY.md`;
-`index.html` here is its published form. If one changes, change both.
+`index.html` here is its published form. If one changes, change both, including
+the "Last updated" date.
 
 ## The pages
 
